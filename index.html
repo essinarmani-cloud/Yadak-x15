@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="فروشگاه اینترنتی قطعات خودرو یدک ایکس ۱۵">
+  <title>یدک ایکس ۱۵ | فروشگاه آنلاین قطعات خودرو</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#"><span class="xmark">X</span><span><b>یدک ایکس <em>۱۵</em></b><small>فروشگاه آنلاین قطعات خودرو</small></span></a>
+  <div class="search"><input id="search" placeholder="نام قطعه، برند یا مدل خودرو را جستجو کن…"><button onclick="searchProducts()">جستجو</button></div>
+  <button class="cart-btn" onclick="toggleCart()">🛒 سبد خرید <b id="cart-count">۰</b></button>
+</header>
+<nav class="nav"><a href="#categories">دسته‌بندی‌ها</a><a href="#products">محصولات</a><a href="#videos">ویدئوهای محصولات</a><a href="#about">درباره ما</a></nav>
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">خرید آنلاین قطعات خودرو</span>
+      <h1>قطعه درست،<br><strong>رانندگی مطمئن‌تر.</strong></h1>
+      <p>لنت ترمز، تسمه تایم، شمع، فیلتر و قطعات مصرفی خودرو را با جست‌وجوی آسان پیدا کن.</p>
+      <a class="primary" href="#products">مشاهده محصولات ←</a>
+      <div class="trust"><span>✓ انتخاب آسان</span><span>✓ پشتیبانی خرید</span><span>✓ سفارش آنلاین</span></div>
+    </div>
+    <div class="hero-art" aria-label="تصویرسازی قطعات خودرو"><div class="orbit orbit1"></div><div class="orbit orbit2"></div><div class="part part1">⚙</div><div class="part part2">X</div><div class="part part3">✦</div><div class="hero-label">YADAK <b>X 15</b></div></div>
+  </section>
+  <section id="categories" class="section">
+    <div class="section-head"><div><span class="eyebrow">دسته‌بندی سریع</span><h2>دنبال چه قطعه‌ای هستی؟</h2></div></div>
+    <div class="categories">
+      <button onclick="filterCategory('لنت ترمز')">🛑<span>لنت ترمز</span></button><button onclick="filterCategory('تسمه تایم')">〰️<span>تسمه تایم</span></button><button onclick="filterCategory('شمع')">⚡<span>شمع خودرو</span></button><button onclick="filterCategory('فیلتر')">◉<span>فیلترها</span></button><button onclick="filterCategory('روغن')">🛢️<span>روغن و روانکار</span></button><button onclick="filterCategory('همه')">▦<span>همه محصولات</span></button>
+    </div>
+  </section>
+  <section id="products" class="section">
+    <div class="section-head"><div><span class="eyebrow">انتخاب‌های فروشگاه</span><h2>محصولات نمونه</h2></div><span class="muted">قیمت‌ها نمونه هستند؛ قبل از انتشار اصلاح شوند.</span></div>
+    <div id="product-grid" class="product-grid"></div>
+  </section>
+  <section id="videos" class="section video-section">
+    <div><span class="eyebrow">با خیال راحت انتخاب کن</span><h2>ویدئوهای معرفی قطعات</h2><p>ویدئوی واقعی محصول را اینجا قرار بده تا مشتری قبل از خرید جزئیات کالا را ببیند.</p></div>
+    <div class="video-placeholder"><div class="play">▶</div><b>گالری ویدئوهای محصولات</b><small>برای نمایش ویدئوی واقعی، فایل ویدئو باید به سایت اضافه شود.</small></div>
+  </section>
+  <section id="about" class="benefits"><div><b>✓</b><span><strong>جست‌وجوی سریع</strong><small>براساس نام قطعه و دسته‌بندی</small></span></div><div><b>↗</b><span><strong>ثبت سفارش آنلاین</strong><small>سبد خرید و خلاصه سفارش</small></span></div><div><b>▣</b><span><strong>پرداخت امن</strong><small>درگاه واقعی پس از اتصال فنی فعال می‌شود</small></span></div></section>
+</main>
+<footer><a class="brand" href="#"><span class="xmark">X</span><span><b>یدک ایکس <em>۱۵</em></b><small>YADAK X 15</small></span></a><p>فروشگاه آنلاین قطعات خودرو</p><small>© تمامی حقوق برای یدک ایکس ۱۵ محفوظ است.</small></footer>
+<aside id="cart-panel" class="cart-panel hidden"><div class="cart-head"><h3>سبد خرید شما</h3><button onclick="toggleCart()">✕</button></div><div id="cart-items"></div><div class="cart-total">جمع کل: <b id="cart-total">۰ تومان</b></div><button class="primary full" onclick="checkout()">ادامه ثبت سفارش</button><p class="hint">این نسخه نمایشی است؛ پرداخت بانکی هنوز متصل نشده است.</p></aside>
+<div id="toast" class="toast"></div>
+<script src="script.js"></script>
+</body>
+</html>
