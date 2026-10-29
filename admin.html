@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مدیریت فروشگاه | یدک ایکس ۱۵</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:Tahoma,Arial,sans-serif}
+header{background:#111827;color:white;padding:18px 16px}header h1{font-size:22px;margin:0 0 6px}header p{margin:0;color:#cbd5e1;font-size:13px}
+main{max-width:1100px;margin:22px auto;padding:0 12px}.panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 5px 20px #0f172a0a}
+h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:13px;margin-bottom:5px;color:#475569}input,textarea,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:#fff}textarea{min-height:70px}
+button{border:0;border-radius:9px;padding:11px 15px;font:inherit;font-weight:bold;cursor:pointer;background:#0f766e;color:white;margin:4px 2px}button.secondary{background:#e2e8f0;color:#172033}button.danger{background:#b91c1c}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.status{font-size:13px;margin:10px 0;color:#0f766e;white-space:pre-wrap}.hidden{display:none!important}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;vertical-align:top}th{background:#f8fafc}.tablewrap{overflow-x:auto}.muted{color:#64748b;font-size:12px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}header h1{font-size:19px}main{margin-top:12px}.panel{padding:13px}table{min-width:680px}}
+</style>
+</head>
+<body>
+<header><h1>پنل مدیریت یدک ایکس ۱۵</h1><p>مدیریت محصولات، قیمت و موجودی فروشگاه</p></header>
+<main>
+<section id="loginPanel" class="panel">
+<h2>ورود مدیر</h2>
+<div class="grid">
+<div><label for="email">ایمیل مدیر</label><input id="email" type="email" autocomplete="username" placeholder="ایمیل حسابی که در Supabase ساختید"></div>
+<div><label for="password">رمز عبور</label><input id="password" type="password" autocomplete="current-password" placeholder="رمز حساب مدیر"></div>
+</div>
+<div class="row"><button id="loginBtn">ورود</button></div>
+<p class="muted">رمز خود را فقط در این صفحه وارد کنید؛ آن را برای کسی ارسال نکنید.</p>
+<div id="loginStatus" class="status"></div>
+</section>
+<section id="appPanel" class="hidden">
+<div class="panel">
+<div class="row" style="justify-content:space-between"><h2 id="formTitle">افزودن محصول جدید</h2><button id="logoutBtn" class="secondary">خروج از پنل</button></div>
+<form id="productForm">
+<input id="productId" type="hidden">
+<div class="grid">
+<div><label for="name">نام محصول *</label><input id="name" required></div>
+<div><label for="brand">برند</label><input id="brand"></div>
+<div><label for="product_code">کد فنی / کد محصول</label><input id="product_code"></div>
+<div><label for="category">دسته‌بندی</label><input id="category" placeholder="مثلاً لنت ترمز، تسمه، شمع"></div>
+<div><label for="price">قیمت (تومان) *</label><input id="price" type="number" min="0" step="1" required></div>
+<div><label for="stock">موجودی</label><input id="stock" type="number" min="0" step="1" value="0"></div>
+<div><label for="compatible_cars">خودروهای سازگار</label><input id="compatible_cars" placeholder="مثلاً سمند EF7، دنا"></div>
+<div><label for="image_url">لینک عکس محصول</label><input id="image_url" type="url" placeholder="https://..."></div>
+<div style="grid-column:1/-1"><label for="description">توضیحات</label><textarea id="description"></textarea></div>
+<div><label><input id="is_active" type="checkbox" checked style="width:auto"> نمایش در سایت</label></div>
+</div>
+<div class="row"><button type="submit">ذخیره محصول</button><button type="button" id="resetBtn" class="secondary">پاک‌کردن فرم</button></div>
+</form>
+<div id="appStatus" class="status"></div>
+</div>
+<div class="panel">
+<h2>فهرست محصولات</h2>
+<div class="row"><button id="refreshBtn" class="secondary">به‌روزرسانی فهرست</button><span class="muted">ویرایش یا حذف از همین جدول انجام می‌شود.</span></div>
+<div class="tablewrap"><table><thead><tr><th>نام</th><th>برند / کد</th><th>قیمت</th><th>موجودی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody id="productRows"><tr><td colspan="6">در حال بارگذاری…</td></tr></tbody></table></div>
+</div>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const status = (id, text, bad=false) => { $(id).textContent=text; $(id).style.color=bad?'#b91c1c':'#0f766e'; };
+ if (!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_PUBLISHABLE_KEY || window.SUPABASE_PUBLISHABLE_KEY.includes('PASTE_YOUR')) {
+   status('loginStatus','ابتدا فایل supabase-config.js را با کلید عمومی واقعی تنظیم کنید.',true); return;
+ }
+ const db = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_PUBLISHABLE_KEY);
+ const fields = ['name','brand','product_code','category','compatible_cars','price','stock','image_url','description','is_active'];
+ function showApp(on){$('loginPanel').classList.toggle('hidden',on);$('appPanel').classList.toggle('hidden',!on);}
+ function resetForm(){ $('productForm').reset(); $('productId').value=''; $('stock').value='0'; $('is_active').checked=true; $('formTitle').textContent='افزودن محصول جدید'; }
+ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ async function loadProducts(){
+   $('productRows').innerHTML='<tr><td colspan="6">در حال بارگذاری…</td></tr>';
+   const {data,error}=await db.from('products').select('id,name,brand,product_code,price,stock,is_active,category,compatible_cars,image_url,description').order('updated_at',{ascending:false});
+   if(error){$('productRows').innerHTML='<tr><td colspan="6">خطا: '+esc(error.message)+'</td></tr>';return;}
+   if(!data?.length){$('productRows').innerHTML='<tr><td colspan="6">هنوز محصولی ثبت نشده است.</td></tr>';return;}
+   $('productRows').innerHTML=data.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.brand)}<br>${esc(p.product_code)}</td><td>${Number(p.price||0).toLocaleString('fa-IR')} تومان</td><td>${Number(p.stock||0).toLocaleString('fa-IR')}</td><td>${p.is_active?'فعال':'مخفی'}</td><td><button class="secondary" data-edit="${esc(p.id)}">ویرایش</button><button class="danger" data-delete="${esc(p.id)}">حذف</button></td></tr>`).join('');
+   data.forEach(p=>{
+     const edit=$('productRows').querySelector(`[data-edit="${CSS.escape(String(p.id))}"]`);
+     if(edit) edit.addEventListener('click',()=>{fields.forEach(f=>{if(f==='is_active')$(f).checked=p[f]!==false;else $(f).value=p[f]??'';});$('productId').value=p.id;$('formTitle').textContent='ویرایش محصول';window.scrollTo({top:0,behavior:'smooth'});});
+     const del=$('productRows').querySelector(`[data-delete="${CSS.escape(String(p.id))}"]`);
+     if(del) del.addEventListener('click',async()=>{if(!confirm('این محصول حذف شود؟'))return;const {error}=await db.from('products').delete().eq('id',p.id);if(error)status('appStatus','خطا در حذف: '+error.message,true);else{status('appStatus','محصول حذف شد.');await loadProducts();}});
+   });
+ }
+ $('loginBtn').addEventListener('click',async()=>{
+   status('loginStatus','در حال ورود…');
+   const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+   if(error){status('loginStatus','ورود ناموفق: '+error.message,true);return;}
+   const {data:admin,error:adminErr}=await db.rpc('is_admin');
+   if(adminErr||admin!==true){await db.auth.signOut();status('loginStatus','این حساب اجازه مدیریت ندارد. شناسه حساب باید در جدول admin_users ثبت شده باشد.',true);return;}
+   status('loginStatus','ورود موفق');showApp(true);await loadProducts();
+ });
+ $('logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();showApp(false);status('loginStatus','از پنل خارج شدید.');});
+ $('refreshBtn').addEventListener('click',loadProducts);
+ $('resetBtn').addEventListener('click',resetForm);
+ $('productForm').addEventListener('submit',async e=>{
+   e.preventDefault();status('appStatus','در حال ذخیره…');
+   const record={};fields.forEach(f=>{if(f==='is_active')record[f]=$(f).checked;else if(f==='price'||f==='stock')record[f]=Number($(f).value||0);else record[f]=$(f).value.trim()||null;});
+   record.updated_at=new Date().toISOString();
+   const id=$('productId').value;
+   let result=id?await db.from('products').update(record).eq('id',id):await db.from('products').insert(record);
+   if(result.error){status('appStatus','ذخیره نشد: '+result.error.message,true);return;}
+   status('appStatus','محصول با موفقیت ذخیره شد.');resetForm();await loadProducts();
+ });
+ db.auth.getSession().then(async({data})=>{if(data.session){const {data:admin}=await db.rpc('is_admin');if(admin){showApp(true);await loadProducts();}}});
+})();
+</script>
+</body></html>
