@@ -203,7 +203,6 @@ function toggleCart() {
   if (panel) panel.classList.toggle("hidden");
   renderCart();
 }
-
 function checkout() {
   if (cart.length === 0) {
     toast("سبد خرید شما خالی است");
@@ -297,7 +296,98 @@ if (cart.length === 0) {
     document.getElementById("order-form")
       .addEventListener("submit", submitOrder);
   } else {
+
     modal.style.display = "flex";
+    function checkout() {
+  if (cart.length === 0) {
+    toast("سبد خرید شما خالی است");
+    return;
+  }
+  const missingProduct = cart.some(item =>
+    !products.some(p => String(p.id) === String(item.id))
+  );
+
+  if (missingProduct) {
+    toast("اطلاعات محصولات هنوز کامل دریافت نشده است");
+    return;
+  }
+
+  let modal = document.getElementById("order-modal");
+
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "order-modal";
+
+    modal.style.cssText = `
+      position:fixed;
+      inset:0;
+      background:#0009;
+      z-index:99999;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:15px;
+      overflow:auto;
+    `;
+
+    modal.innerHTML = `
+      <div style="
+        background:white;
+        color:#222;
+        padding:22px;
+        border-radius:15px;
+        width:100%;
+        max-width:450px;
+        max-height:90vh;
+        overflow:auto;
+        direction:rtl
+      ">
+        <h2>ثبت سفارش آنلاین</h2>
+        <p>لطفاً اطلاعات خود را وارد کنید.</p>
+
+        <form id="order-form">
+          <input name="customer_name" placeholder="نام و نام خانوادگی"
+            required maxlength="120"
+            style="width:100%;padding:12px;margin:7px 0;box-sizing:border-box">
+
+          <input name="phone" type="tel" placeholder="شماره موبایل"
+            required maxlength="20"
+            style="width:100%;padding:12px;margin:7px 0;box-sizing:border-box">
+
+          <input name="city" placeholder="شهر"
+            required maxlength="100"
+            style="width:100%;padding:12px;margin:7px 0;box-sizing:border-box">
+
+          <textarea name="address" placeholder="آدرس کامل"
+            required maxlength="1000"
+            style="width:100%;padding:12px;margin:7px 0;box-sizing:border-box"></textarea>
+
+          <textarea name="description"
+            placeholder="توضیحات سفارش (اختیاری)"
+            maxlength="1000"
+            style="width:100%;padding:12px;margin:7px 0;box-sizing:border-box"></textarea>
+
+          <button id="submit-order" type="submit"
+            style="width:100%;padding:14px;background:#087b45;color:white;border:0;border-radius:8px;margin-top:10px">
+            ثبت نهایی سفارش
+          </button>
+
+          <button type="button" onclick="closeOrderForm()"
+            style="width:100%;padding:12px;margin-top:8px">
+            انصراف
+          </button>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById("order-form")
+      .addEventListener("submit", submitOrder);
+  } else {
+    modal.style.display = "flex";
+  }
+}
   }
 }
 
