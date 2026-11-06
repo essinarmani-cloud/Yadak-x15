@@ -390,3 +390,4 @@ document.addEventListener("DOMContentLoaded", () => {
   saveCart();
   loadProducts();
 });
+window.checkout = checkout;
