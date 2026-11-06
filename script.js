@@ -88,47 +88,42 @@ function saveCart() {
     fa(cart.reduce((s,x) => s+x.qty, 0));
   renderCart();
 }
-
 function renderCart() {
   const root = document.getElementById("cart-items");
+
   root.innerHTML = cart.map(x => {
-    const p = products.find(p => String(p.id) === String(x.id));
-    if (!p) return "";
+    const p = products.find(
+      p => String(p.id) === String(x.id)
+    );
+
+    if (!p) {
+      return `<div class="cart-row">
+        <span>در حال دریافت اطلاعات محصول...</span>
+      </div>`;
+    }
+
     return `
       <div class="cart-row">
-        <span>${p.name}<br>${fa(x.qty)} × ${fa(p.price)} تومان</span>
-        <span><b>${fa(x.qty*p.price)}</b><br>
-        <button onclick="removeItem('${String(p.id).replace(/'/g, "\\'")}')">حذف</button></span>
-      </div>`;
+        <span>${p.name}<br>
+          ${fa(x.qty)} × ${fa(p.price)} تومان
+        </span>
+        <span>
+          <b>${fa(x.qty * p.price)}</b><br>
+          <button onclick="removeItem('${String(p.id)}')">حذف</button>
+        </span>
+      </div>
+    `;
   }).join("") || "<p>سبد خرید خالی است.</p>";
 
   document.getElementById("cart-total").textContent =
-    fa(cart.reduce((s,x) => {
-      const p = products.find(p => String(p.id) === String(x.id));
-      return s + (p ? p.price*x.qty : 0);
+    fa(cart.reduce((s, x) => {
+      const p = products.find(
+        p => String(p.id) === String(x.id)
+      );
+      return s + (p ? p.price * x.qty : 0);
     }, 0)) + " تومان";
 }
-
-function removeItem(id) {
-  cart = cart.filter(x => String(x.id) !== String(id));
-  saveCart();
 }
-
-function toggleCart() {
-  document.getElementById("cart-panel").classList.toggle("hidden");
-}
-
-// نمایش فرم سفارش
-function checkout() {
-  if (!cart.length) {
-    toast("سبد خرید خالی است");
-    return;
-  }
-
-  if (!products.length) {
-    toast("لطفاً صبر کنید تا محصولات بارگذاری شوند");
-    return;
-  }
 
   if (!document.getElementById("order-modal")) {
     const modal = document.createElement("div");
