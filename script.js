@@ -1,3 +1,4 @@
+
 const db = window.supabase.createClient(
   window.SUPABASE_URL,
   window.SUPABASE_PUBLISHABLE_KEY
@@ -158,17 +159,15 @@ function renderCart() {
     const product = products.find(
       p => String(p.id) === String(item.id)
     );
-if (!product) {
-  return `
-    <div class="cart-row">
-      <span style="color:#b91c1c">
-        محصول قدیمی یا غیرفعال
-      </span>
-      <button onclick="removeItem('${safe(item.id)}')">
-        حذف
-      </button>
-    </div>
+
+    if (!product) {
+      return `
+        <div class="cart-row">
+          <span>در حال دریافت اطلاعات محصول...</span>
+        </div>
+      `;
     }
+
     const qty = Number(item.qty || 0);
     const subtotal = Number(product.price || 0) * qty;
     total += subtotal;
