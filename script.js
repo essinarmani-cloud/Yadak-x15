@@ -1,4 +1,3 @@
-
 const db = window.supabase.createClient(
   window.SUPABASE_URL,
   window.SUPABASE_PUBLISHABLE_KEY
@@ -211,13 +210,16 @@ function checkout() {
     return;
   }
 
-  const missingProduct = cart.some(item =>
-    !products.some(p => String(p.id) === String(item.id))
-  );
+  cart = cart.filter(item =>
+  products.some(p => String(p.id) === String(item.id))
+);
 
-  if (missingProduct) {
-    toast("لطفاً چند لحظه صبر کنید تا اطلاعات محصولات دریافت شود");
-    return;
+saveCart();
+
+if (cart.length === 0) {
+  toast("سبد خرید خالی است؛ لطفاً محصول انتخاب کنید");
+  return;
+}
   }
 
   let modal = document.getElementById("order-modal");
