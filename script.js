@@ -1,6 +1,7 @@
 
 /* =====================================
    YADAK X15 - Main Script
+   نسخه جدید با فیلتر خودرو
 ===================================== */
 
 const db = window.supabase.createClient(
@@ -11,6 +12,9 @@ const db = window.supabase.createClient(
 let products = [];
 let shown = [];
 let cart = [];
+
+let activeCategory = "همه";
+let activeVehicle = "";
 
 /* =====================================
    سبد خرید
@@ -37,6 +41,147 @@ function safe(value) {
     '"': "&quot;",
     "'": "&#39;"
   })[char]);
+}
+
+/* =====================================
+   یکسان سازی متن فارسی
+===================================== */
+
+function normalize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/* =====================================
+   استخراج خودروهای محصولات
+===================================== */
+
+function getVehicleList(product) {
+  const value = product.compatible_cars || "";
+
+  const cars = Array.isArray(value)
+    ? value
+    : String(value).split(/[,،;؛|\n]+/);
+
+  return cars
+    .map(car => String(car).trim())
+    .filter(Boolean);
+}
+
+/* =====================================
+   ساخت فیلتر خودرو در صفحه
+===================================== */
+
+function createVehicleFilter() {
+  const grid = document.getElementById("product-grid");
+
+  if (!grid) return;
+
+  let filterBox = document.getElementById("vehicle-filter");
+
+  if (!filterBox) {
+    filterBox = document.createElement("div");
+    filterBox.id = "vehicle-filter";
+
+    filterBox.style.cssText = `
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:14px;
+      padding:15px;
+      margin:15px 0;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    `;
+
+    filterBox.innerHTML = `
+      <div style="flex:1;min-width:180px">
+        <label for="vehicle-select"
+          style="display:block;margin-bottom:7px;font-weight:bold">
+          🚗 قطعه مناسب خودروی خودت را پیدا کن
+        </label>
+
+        <select id="vehicle-select"
+          style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit">
+
+          <option value="">همه خودروها</option>
+
+        </select>
+      </div>
+
+      <button id="clear-filters"
+        type="button"
+        style="padding:12px 18px;background:#334155;color:white;border:0;border-radius:9px;cursor:pointer">
+        پاک کردن فیلترها
+      </button>
+
+      <small id="vehicle-help"
+        style="width:100%;color:#64748b">
+        خودروی خودت را انتخاب کن تا قطعات سازگار نمایش داده شوند.
+      </small>
+    `;
+
+    grid.parentNode.insertBefore(filterBox, grid);
+
+    document.getElementById("vehicle-select")
+      .addEventListener("change", event => {
+        activeVehicle = event.target.value;
+        applyFilters();
+      });
+
+    document.getElementById("clear-filters")
+      .addEventListener("click", clearFilters);
+  }
+
+  updateVehicleOptions();
+}
+
+/* =====================================
+   به روزرسانی فهرست خودروها
+===================================== */
+
+function updateVehicleOptions() {
+  const select = document.getElementById("vehicle-select");
+
+  if (!select) return;
+
+  const vehicles = new Map();
+
+  products.forEach(product => {
+    getVehicleList(product).forEach(car => {
+      const key = normalize(car);
+
+      if (key && !vehicles.has(key)) {
+        vehicles.set(key, car);
+      }
+    });
+  });
+
+  const sortedVehicles = [...vehicles.values()]
+    .sort((a, b) => a.localeCompare(b, "fa"));
+
+  select.innerHTML = `
+    <option value="">همه خودروها</option>
+    ${sortedVehicles.map(car => `
+      <option value="${safe(car)}"
+        ${normalize(car) === normalize(activeVehicle) && activeVehicle ? "selected" : ""}>
+        ${safe(car)}
+      </option>
+    `).join("")}
+  `;
+
+  const help = document.getElementById("vehicle-help");
+
+  if (help) {
+    help.textContent = sortedVehicles.length
+      ? "خودروی خودت را انتخاب کن تا قطعات سازگار نمایش داده شوند."
+      : "هنوز خودروی سازگاری برای محصولات ثبت نشده است. از پنل مدیریت مشخصات خودرو را وارد کن.";
+  }
 }
 
 /* =====================================
@@ -101,10 +246,48 @@ async function loadProducts() {
     JSON.stringify(cart)
   );
 
-  shown = products.slice();
+  createVehicleFilter();
+  applyFilters();
+  saveCart();
+}
+
+/* =====================================
+   اعمال تمام فیلترها
+===================================== */
+
+function applyFilters() {
+  const search = document.getElementById("search");
+
+  const q = normalize(search ? search.value : "");
+  const vehicle = normalize(activeVehicle);
+
+  shown = products.filter(p => {
+
+    const text = normalize([
+      p.name,
+      p.brand,
+      p.category,
+      p.compatible_cars,
+      p.description,
+      p.product_code
+    ].join(" "));
+
+    const matchSearch = !q || text.includes(q);
+
+    const matchCategory =
+      activeCategory === "همه" ||
+      normalize(p.category).includes(normalize(activeCategory));
+
+    const matchVehicle =
+      !vehicle ||
+      getVehicleList(p).some(car =>
+        normalize(car) === vehicle
+      );
+
+    return matchSearch && matchCategory && matchVehicle;
+  });
 
   renderProducts();
-  saveCart();
 }
 
 /* =====================================
@@ -146,8 +329,9 @@ function renderProducts() {
       <p>موجودی: ${fa(p.stock)}</p>
 
       <button class="add"
-        onclick="addToCart('${safe(p.id)}')">
-        افزودن به سبد خرید +
+        onclick="addToCart('${safe(p.id)}')"
+        ${Number(p.stock) <= 0 ? "disabled" : ""}>
+        ${Number(p.stock) <= 0 ? "ناموجود" : "افزودن به سبد خرید +"}
       </button>
 
     </article>
@@ -159,23 +343,7 @@ function renderProducts() {
 ===================================== */
 
 function searchProducts() {
-  const search = document.getElementById("search");
-
-  if (!search) return;
-
-  const q = search.value.trim().toLowerCase();
-
-  shown = products.filter(p =>
-    [
-      p.name,
-      p.brand,
-      p.category,
-      p.fit,
-      p.product_code
-    ].join(" ").toLowerCase().includes(q)
-  );
-
-  renderProducts();
+  applyFilters();
 
   const section = document.getElementById("products");
 
@@ -189,19 +357,34 @@ function searchProducts() {
 ===================================== */
 
 function filterCategory(category) {
-  shown = category === "همه"
-    ? products.slice()
-    : products.filter(p =>
-        String(p.category || "").includes(category)
-      );
+  activeCategory = category || "همه";
 
-  renderProducts();
+  applyFilters();
 
   const section = document.getElementById("products");
 
   if (section) {
     section.scrollIntoView({ behavior: "smooth" });
   }
+}
+
+/* =====================================
+   پاک کردن فیلترها
+===================================== */
+
+function clearFilters() {
+  activeCategory = "همه";
+  activeVehicle = "";
+
+  const search = document.getElementById("search");
+  const select = document.getElementById("vehicle-select");
+
+  if (search) search.value = "";
+  if (select) select.value = "";
+
+  applyFilters();
+
+  toast("فیلترها پاک شدند");
 }
 
 /* =====================================
@@ -654,6 +837,7 @@ window.checkout = checkout;
 window.closeOrderForm = closeOrderForm;
 window.searchProducts = searchProducts;
 window.filterCategory = filterCategory;
+window.clearFilters = clearFilters;
 
 /* =====================================
    شروع سایت
@@ -662,4 +846,10 @@ window.filterCategory = filterCategory;
 document.addEventListener("DOMContentLoaded", () => {
   saveCart();
   loadProducts();
+
+  const search = document.getElementById("search");
+
+  if (search) {
+    search.addEventListener("input", applyFilters);
+  }
 });
