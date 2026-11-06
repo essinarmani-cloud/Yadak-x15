@@ -50,7 +50,11 @@ async function loadProducts() {
     fit: p.compatible_cars || p.description || "اطلاعات محصول",
     icon: "⚙"
   }));
+  const validIds = new Set(products.map(p => String(p.id)));
 
+cart = cart.filter(item => validIds.has(String(item.id)));
+
+localStorage.setItem("yadakx15-cart", JSON.stringify(cart));
   shown = products.slice();
   renderProducts();
   renderCart();
